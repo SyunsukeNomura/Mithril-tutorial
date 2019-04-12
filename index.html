@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Mithrilのアプリケーション</title>
+        <link href="styles.css" rel="stylesheet" />
+    </head>
+    <body>
+        <script src="bin/app.js"></script>
+    </body>
+    <script src="https://unpkg.com/mithril/mithril.js"></script>
+    <script>
+    var User = {
+    list: [],
+    loadList: function() {
+      return m.request({
+          method: "GET",
+          url: "https://rem-rest-api.herokuapp.com/api/users",
+          withCredentials: true,
+      })
+      .then(function(result){
+          User.list = result.data
+      })
+    },
+
+    current: {},
+    load: function(id) {
+      return m.request({
+          method: "GET",
+          url: "https://rem-rest-api.herokuapp.com/api/users/:id",
+          data: {id: id},
+          withCredentials: true,
+      })
+      .then(function(result){
+          User.current = result
+      })
+    },
+}
+
+    var UserList = {
+        oninit: User.loadList,
+        view: function() {
+            return m(".user-list", User.list.map(function(user){
+                return m("a.user-list-item", {href: "/edit/" + user.id, oncreate: m.route.link} ,user.firstName + " " + user.lastName)
+            }))
+        }
+    }
+
+    var UserForm = {
+        oninit: function(vnode) {User.load(vnode.attrs.id)},
+        view: function() {
+          return m("form", {
+              onsubmit: function(e) {
+                  e.preventDefault()
+                  User.save()
+              }
+              },[
+              m("label.label", "名前"),
+              m("input.input[type=text][placeholder=名前]", {
+                  oninput: m
+                  value: User.current.firstName}),
+              m("label.label", "名字"),
+              m("input.input[placeholder=名字]", {value: User.current.lastName}),
+              m("button.button[type=botton]", "保存"),
+          ])
+        }
+    }
+
+    m.route(document.body, "/list", {
+        "/list": UserList,
+        "/edit/:id": UserForm,
+    })
+
+    </script>
+    </html>
